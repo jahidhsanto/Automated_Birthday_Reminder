@@ -1,0 +1,77 @@
+function sendEmailWithFilteredData() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Birthdays");   // Rewrite this with your sheet name
+  
+  // Check if the sheet exists
+  if (!sheet) {
+    console.error("Sheet 'YourSheetName' not found.");
+    return;
+  }
+
+  var sheetUrl = sheet.getParent().getUrl();
+  
+  // Get the last row with data in the sheet
+  var lastRow = sheet.getLastRow();
+  
+  // Specify the range of data you want to include in the email (including 7 columns and all rows)
+  var range = sheet.getRange("A1:G" + lastRow); // Adjust the range as needed
+  
+  // Check if a filter already exists, and remove it if so
+  if (range.getFilter()) {
+    range.getFilter().remove();
+  }
+  
+  // Apply filters if necessary
+  range.createFilter();
+  
+  // Modify filter criteria for the sixth column (column index 6) to filter by "AFTER LONG DAY"
+  var columnIndex = 6; // Index of the sixth column (F)
+  var filterCriteria = SpreadsheetApp.newFilterCriteria().whenTextEqualTo('TODAY'); // Filter by "AFTER LONG DAY"
+  
+  // Set the filter criteria for the sixth column
+  range.getFilter().setColumnFilterCriteria(columnIndex, filterCriteria);
+  
+  // Get the filtered rows
+  var filteredRows = range.getValues().filter(function(row) {
+    return row[columnIndex - 1] === 'TODAY'; // Adjust the index based on 1-indexed arrays
+  });
+
+  // Get the header row
+  var headerRow = range.offset(0, 0, 1).getValues()[0];
+  
+  // Format header and filtered rows into a table
+  var table = '<table border="1">';
+
+  // Add header row
+  table += '<tr style="background-color: #FFFF00;">';
+  for (var i = 0; i < headerRow.length; i++) {
+    table += '<th>' + headerRow[i] + '</th>';
+  }
+  table += '</tr>';
+
+  // Add filtered rows
+  for (var i = 0; i < filteredRows.length; i++) {
+    table += '<tr>';
+    for (var j = 0; j < filteredRows[i].length; j++) {
+      table += '<td>' + filteredRows[i][j] + '</td>';
+    }
+    table += '</tr>';
+  }
+  table += '</table>';
+  
+  // Replace 'recipient@example.com' with the email address of the recipient
+  var recipients = ['jahidhsanto@gmail.com', 'jahidhsanto@gmail.com'];
+  // var recipients = ['jahidhsanto@gmail.com'];
+  var cc = 'jahidhsanto@gmail.com'
+  var subject = 'Today\s birthday employee list';
+  var body = 'Here is the filtered data from the Google Sheets document: <br>' + table + '<br> Link to the sheet: ' + sheetUrl;
+  
+  // Send the email to multiple recipients
+  recipients.forEach(function(recipient) {
+    MailApp.sendEmail({
+      to: recipient,
+      cc: cc,
+      subject: subject,
+      htmlBody: body
+    });
+  });
+}
